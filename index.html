@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indus AI</title>
+<meta name="description" content="Indus AI — a free AI chat assistant developed by Manshu. Ask anything, get instant answers.">
+<meta property="og:title" content="Indus AI">
+<meta property="og:description" content="A free AI chat assistant — ask anything, get instant answers.">
+<meta property="og:image" content="/icons/icon-512.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#FF9933">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23FF9933'/%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23FF9933' transform='rotate(90 50 52)'/%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23FF9933' transform='rotate(180 50 52)'/%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23FF9933' transform='rotate(270 50 52)'/%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23138808' transform='rotate(45 50 52)'/%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23138808' transform='rotate(135 50 52)'/%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23138808' transform='rotate(225 50 52)'/%3E%3Cpath d='M50,52 Q38,28 50,6 Q62,28 50,52 Z' fill='%23138808' transform='rotate(315 50 52)'/%3E%3Ccircle cx='50' cy='52' r='10' fill='%2306038D'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<style>
+  :root {
+    --saffron: #FF9933;
+    --green: #138808;
+    --chakra: #06038D;
+    --ink: #1a1a1a;
+    --bg: #FFFBF5;
+    --panel: #ffffff;
+    --border: #f0e6d8;
+    --muted: #7a7a7a;
+    --sidebar-bg: #FFF3E4;
+  }
+  [data-theme="dark"] {
+    --ink: #f0f0f0;
+    --bg: #17161c;
+    --panel: #211f28;
+    --border: #33303e;
+    --muted: #9a97a8;
+    --sidebar-bg: #1c1a22;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+  }
+  body { display: flex; flex-direction: column; }
+
+  .tricolor-strip {
+    height: 4px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--saffron) 0 33.3%, #ffffff 33.3% 66.6%, var(--green) 66.6% 100%);
+    flex-shrink: 0;
+  }
+
+  .app { flex: 1; display: flex; overflow: hidden; }
+
+  #sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+  #sidebar.hidden { margin-left: -260px; }
+  #sidebarCloseBtn { display: none; background: none; border: none; cursor: pointer; padding: 6px; color: var(--ink); margin-left: auto; }
+  #sidebarBackdrop { display: none; }
+  .sidebar-header { display: flex; align-items: center; gap: 10px; padding: 16px 14px 10px; }
+  .logo { width: 30px; height: 30px; flex-shrink: 0; }
+  .sidebar-header h1 { font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 600; margin: 0; }
+  .dev-credit { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+  #newChatBtn {
+    margin: 6px 14px 10px; padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--panel); color: var(--ink);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #newChatBtn:hover { border-color: var(--saffron); }
+  #convList { flex: 1; overflow-y: auto; padding: 4px 8px; }
+  .conv-item {
+    padding: 10px 10px; border-radius: 8px; font-size: 13.5px; color: var(--muted);
+    cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+  }
+  .conv-item:hover { background: var(--border); }
+  .conv-item.active { background: var(--border); color: var(--ink); font-weight: 600; }
+  .conv-item .del-x { opacity: 0; font-size: 15px; line-height: 1; color: var(--muted); }
+  .conv-item:hover .del-x { opacity: 1; }
+  .sidebar-footer {
+    padding: 10px 14px 16px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #themeToggle {
+    background: none; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; cursor: pointer; font-size: 13px; color: var(--ink);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .main-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0;
+  }
+  #sidebarToggle { background: none; border: none; cursor: pointer; padding: 6px; color: var(--ink); }
+  .topbar h2 { font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600; margin: 0; color: var(--muted); }
+
+  #chat { flex: 1; overflow-y: auto; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; }
+  .chat-inner { max-width: 720px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+  .empty-state { margin: auto; text-align: center; color: var(--muted); padding: 20px; max-width: 480px; }
+  .empty-state .big-lotus { width: 60px; height: 60px; margin: 0 auto 14px; }
+  .empty-state h2 { font-family: 'Poppins', sans-serif; font-size: 19px; color: var(--ink); margin: 0 0 6px; }
+  .empty-state p { font-size: 13.5px; margin: 0 0 16px; }
+  .dev-credit-empty { font-size: 11px !important; color: var(--muted); margin-top: -8px !important; }
+  .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .suggestion-chip {
+    padding: 8px 14px; border: 1px solid var(--border); border-radius: 20px;
+    font-size: 12.5px; cursor: pointer; background: var(--panel); color: var(--ink);
+  }
+  .suggestion-chip:hover { border-color: var(--saffron); }
+
+  .row { display: flex; gap: 10px; align-items: flex-start; }
+  .row.user { flex-direction: row-reverse; }
+
+  .avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .avatar.bot { background: linear-gradient(135deg, var(--saffron), var(--green)); padding: 5px; }
+  .avatar.bot svg { width: 100%; height: 100%; }
+  .avatar.user { background: var(--chakra); color: white; font-size: 12.5px; font-weight: 600; }
+
+  .msg-col { display: flex; flex-direction: column; gap: 6px; max-width: 82%; }
+  .row.user .msg-col { align-items: flex-end; }
+
+  .bubble { padding: 11px 15px; border-radius: 16px; font-size: 15px; line-height: 1.6; word-wrap: break-word; }
+  .row.bot .bubble { background: var(--panel); border: 1px solid var(--border); border-top-left-radius: 4px; }
+  .row.user .bubble { background: var(--chakra); color: white; border-top-right-radius: 4px; white-space: pre-wrap; }
+
+  .bubble p { margin: 0 0 10px; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble pre { background: #0d0d12; border-radius: 10px; padding: 12px 14px; overflow-x: auto; margin: 8px 0; position: relative; }
+  .bubble code { font-family: 'SF Mono', Consolas, monospace; font-size: 13px; }
+  .bubble :not(pre) > code { background: rgba(150,150,150,0.18); padding: 1px 5px; border-radius: 4px; }
+  .bubble ul, .bubble ol { margin: 6px 0; padding-left: 22px; }
+  .bubble a { color: var(--saffron); }
+  .code-wrap { position: relative; }
+  .copy-code-btn {
+    position: absolute; top: 6px; right: 6px; font-size: 11px; padding: 3px 8px;
+    background: rgba(255,255,255,0.1); color: #ddd; border: none; border-radius: 5px; cursor: pointer;
+  }
+
+  .msg-actions { display: flex; gap: 10px; opacity: 0.55; }
+  .msg-actions button {
+    background: none; border: none; cursor: pointer; font-size: 11.5px; color: var(--muted);
+    padding: 2px 4px; display: flex; align-items: center; gap: 4px;
+  }
+  .msg-actions button:hover { color: var(--ink); opacity: 1; }
+
+  .typing { display: flex; gap: 4px; padding: 4px 2px; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: bounce 1.2s infinite ease-in-out; }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+  .composer-area { padding: 12px 16px 18px; background: var(--bg); flex-shrink: 0; }
+  .composer-inner { max-width: 720px; margin: 0 auto; }
+  form#composer {
+    display: flex; align-items: flex-end; gap: 10px; background: var(--panel);
+    border: 1.5px solid var(--border); border-radius: 22px; padding: 8px 8px 8px 18px;
+  }
+  form#composer:focus-within { border-color: var(--saffron); }
+  #userInput {
+    flex: 1; border: none; outline: none; resize: none; font-size: 15px;
+    font-family: 'Inter', sans-serif; background: transparent; color: var(--ink);
+    max-height: 160px; padding: 8px 0; line-height: 1.5;
+  }
+  #sendBtn {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, var(--saffron), var(--green)); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.12s;
+  }
+  #sendBtn:active { transform: scale(0.92); }
+  #sendBtn:disabled { opacity: 0.4; cursor: default; }
+  #sendBtn svg { width: 18px; height: 18px; }
+  .hint { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  #authOverlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,16,10,0.55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #authOverlay.hidden { display: none; }
+  .auth-card {
+    background: var(--panel); border-radius: 18px; padding: 28px 26px;
+    width: 100%; max-width: 340px; text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  }
+  .auth-card h2 { font-family: 'Poppins', sans-serif; font-size: 19px; margin: 12px 0 4px; }
+  .auth-sub { font-size: 12.5px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+  #authForm { display: flex; flex-direction: column; gap: 10px; }
+  #authForm input {
+    padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--ink); font-size: 14.5px; outline: none;
+  }
+  #authForm input:focus { border-color: var(--saffron); }
+  #authForm button {
+    margin-top: 4px; padding: 11px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--saffron), var(--green));
+    color: white; font-weight: 600; font-size: 14.5px; cursor: pointer;
+  }
+  .auth-switch { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+  .auth-switch span { color: var(--saffron); font-weight: 600; cursor: pointer; }
+  .auth-note { font-size: 10.5px; color: var(--muted); margin-top: 16px; line-height: 1.5; border-top: 1px solid var(--border); padding-top: 12px; }
+
+  .user-chip { display: flex; align-items: center; gap: 8px; }
+  .user-chip .avatar-mini {
+    width: 24px; height: 24px; border-radius: 50%; background: var(--chakra);
+    color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .user-chip span.uname { font-size: 12px; font-weight: 600; }
+  #signOutBtn { background: none; border: none; color: var(--muted); font-size: 11px; cursor: pointer; text-decoration: underline; margin-left: 4px; }
+
+  #contactBtn {
+    margin: 4px 14px 10px; padding: 9px 14px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: transparent; color: var(--ink);
+    font-size: 12.5px; font-weight: 600; cursor: pointer; text-align: left;
+  }
+  #contactBtn:hover { border-color: var(--saffron); }
+
+  #contactOverlay {
+    position: fixed; inset: 0; z-index: 110;
+    background: rgba(20,16,10,0.55);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  #contactOverlay.hidden { display: none; }
+  .contact-card {
+    background: var(--panel); border-radius: 18px; padding: 22px 22px 26px;
+    width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    max-height: 85vh; overflow-y: auto;
+  }
+  .contact-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .contact-card-header h2 { font-family: 'Poppins', sans-serif; font-size: 17px; margin: 0; }
+  #contactCloseBtn { background: none; border: none; color: var(--ink); cursor: pointer; padding: 4px; }
+  .contact-links { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .contact-link-btn {
+    display: block; padding: 11px 14px; border-radius: 10px;
+    border: 1.5px solid var(--border); color: var(--ink); text-decoration: none;
+    font-size: 13.5px; font-weight: 500;
+  }
+  .contact-link-btn:hover { border-color: var(--saffron); }
+  .contact-divider {
+    text-align: center; font-size: 11.5px; color: var(--muted);
+    margin: 4px 0 14px; position: relative;
+  }
+  #feedbackForm { display: flex; flex-direction: column; gap: 10px; }
+  #feedbackForm input, #feedbackForm textarea {
+    padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--ink); font-size: 13.5px; font-family: 'Inter', sans-serif;
+    outline: none; resize: vertical;
+  }
+  #feedbackForm input:focus, #feedbackForm textarea:focus { border-color: var(--saffron); }
+  #feedbackSubmitBtn {
+    padding: 11px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--saffron), var(--green));
+    color: white; font-weight: 600; font-size: 13.5px; cursor: pointer;
+  }
+  #feedbackSubmitBtn:disabled { opacity: 0.6; }
+  #feedbackStatus { font-size: 12px; margin-top: 10px; text-align: center; }
+  #feedbackStatus.success { color: var(--green); }
+  #feedbackStatus.error { color: #c0392b; }
+
+  @media (max-width: 720px) {
+    #sidebar {
+      position: fixed; z-index: 30; height: calc(100% - 4px); top: 4px; left: 0;
+      transform: translateX(-100%);
+    }
+    #sidebar.open { transform: translateX(0); }
+    #sidebar.hidden { margin-left: 0; }
+    #sidebarCloseBtn { display: flex; }
+    #sidebarBackdrop.open {
+      display: block; position: fixed; inset: 0; top: 4px;
+      background: rgba(0,0,0,0.35); z-index: 25;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebarBackdrop"></div>
+
+<!-- Sign in overlay -->
+<div id="authOverlay">
+  <div class="auth-card">
+    <svg width="46" height="46" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933"/>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(90 50 52)"/>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(180 50 52)"/>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(270 50 52)"/>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(45 50 52)"/>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(135 50 52)"/>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(225 50 52)"/>
+      <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(315 50 52)"/>
+      <circle cx="50" cy="52" r="10" fill="#06038D"/>
+    </g></svg>
+    <h2 id="authTitle">Sign in to Indus AI</h2>
+    <p class="auth-sub">Your name is saved on this device so your chats greet you personally.</p>
+    <form id="authForm">
+      <input type="text" id="authName" placeholder="Your name" required autocomplete="name" />
+      <input type="email" id="authEmail" placeholder="Email (optional)" autocomplete="email" />
+      <button type="submit" id="authSubmitBtn">Sign in</button>
+    </form>
+    <div class="auth-switch">
+      New here? <span id="authSwitchLink">Create an account</span>
+    </div>
+    <div class="auth-note">⚠️ This runs entirely in your browser — there's no server, so this isn't secure login like a real account system. It just remembers your name locally.</div>
+  </div>
+</div>
+
+<div class="tricolor-strip"></div>
+
+<div class="app">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <svg class="logo" width="30" height="30" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933"/>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(90 50 52)"/>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(180 50 52)"/>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(270 50 52)"/>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(45 50 52)"/>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(135 50 52)"/>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(225 50 52)"/>
+        <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(315 50 52)"/>
+        <circle cx="50" cy="52" r="10" fill="#06038D"/>
+      </g></svg>
+      <div>
+        <h1>Indus AI</h1>
+        <div class="dev-credit">by Manshu</div>
+      </div>
+      <button id="sidebarCloseBtn" aria-label="Close sidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <button id="newChatBtn">+ New chat</button>
+    <div id="convList"></div>
+    <button id="contactBtn">💬 Contact / Feedback</button>
+    <div class="sidebar-footer">
+      <div class="user-chip" id="userChip">
+        <div class="avatar-mini" id="avatarMini">?</div>
+        <span class="uname" id="unameLabel">Guest</span>
+        <button id="signOutBtn">Sign out</button>
+      </div>
+      <button id="themeToggle">🌙</button>
+    </div>
+  </aside>
+
+  <!-- Contact / Feedback overlay -->
+  <div id="contactOverlay" class="hidden">
+    <div class="contact-card">
+      <div class="contact-card-header">
+        <h2>Contact &amp; Feedback</h2>
+        <button id="contactCloseBtn" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="contact-links">
+        <a href="mailto:manshum195@gmail.com" class="contact-link-btn">
+          ✉️ Email — manshum195@gmail.com
+        </a>
+        <a href="https://wa.me/918127817478" target="_blank" rel="noopener" class="contact-link-btn">
+          💬 WhatsApp — +91 81278 17478
+        </a>
+      </div>
+
+      <div class="contact-divider">or send a message directly</div>
+
+      <form id="feedbackForm">
+        <input type="text" id="feedbackName" placeholder="Your name (optional)" autocomplete="name" />
+        <textarea id="feedbackMessage" placeholder="Describe your issue, complaint, or feedback..." rows="4" required></textarea>
+        <button type="submit" id="feedbackSubmitBtn">Send Feedback</button>
+      </form>
+      <div id="feedbackStatus"></div>
+    </div>
+  </div>
+
+  <div class="main-col">
+    <div class="topbar">
+      <button id="sidebarToggle" aria-label="Toggle sidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <h2 id="convTitle">New chat</h2>
+    </div>
+
+    <div id="chat"><div class="chat-inner" id="chatInner">
+      <div class="empty-state" id="emptyState">
+        <svg class="big-lotus" width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933"/>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(90 50 52)"/>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(180 50 52)"/>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(270 50 52)"/>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(45 50 52)"/>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(135 50 52)"/>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(225 50 52)"/>
+          <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(315 50 52)"/>
+          <circle cx="50" cy="52" r="10" fill="#06038D"/>
+        </g></svg>
+        <h2>Welcome to Indus AI</h2>
+        <p>Ask me anything — I can explain, write, code, and remember our conversation.</p>
+        <p class="dev-credit-empty">Developed by Manshu</p>
+        <div class="suggestions">
+          <div class="suggestion-chip">Explain quantum computing simply</div>
+          <div class="suggestion-chip">Write a Python function to sort a list</div>
+          <div class="suggestion-chip">Give me 5 startup ideas</div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="composer-area">
+      <div class="composer-inner">
+        <form id="composer">
+          <textarea id="userInput" placeholder="Message Indus AI..." rows="1" required></textarea>
+          <button type="submit" id="sendBtn" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+        <div class="hint">Indus AI can make mistakes. Verify important info.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Standalone-hosting polyfill: replicates the window.storage API using the browser's
+  // own localStorage, so saved chats/theme/profile work the same outside Claude.ai too.
+  if (!window.storage) {
+    window.storage = {
+      async get(key) {
+        const v = localStorage.getItem(key);
+        if (v === null) throw new Error('not found');
+        return { key, value: v };
+      },
+      async set(key, value) {
+        localStorage.setItem(key, value);
+        return { key, value };
+      },
+      async delete(key) {
+        localStorage.removeItem(key);
+        return { key, deleted: true };
+      }
+    };
+  }
+
+  marked.setOptions({ breaks: true, gfm: true });
+
+  const chatInner = document.getElementById('chatInner');
+  const chatBox = document.getElementById('chat');
+  const emptyState = document.getElementById('emptyState');
+  const form = document.getElementById('composer');
+  const input = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const convList = document.getElementById('convList');
+  const convTitle = document.getElementById('convTitle');
+  const sidebar = document.getElementById('sidebar');
+  const themeToggle = document.getElementById('themeToggle');
+
+  let conversations = {};
+  let activeId = null;
+
+  const botAvatarSVG = `<svg viewBox="0 0 100 100"><g>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933"/>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(90 50 52)"/>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(180 50 52)"/>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#FF9933" transform="rotate(270 50 52)"/>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(45 50 52)"/>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(135 50 52)"/>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(225 50 52)"/>
+    <path d="M50,52 Q38,28 50,6 Q62,28 50,52 Z" fill="#138808" transform="rotate(315 50 52)"/>
+    <circle cx="50" cy="52" r="10" fill="#06038D"/>
+  </g></svg>`;
+
+  async function loadConversations() {
+    try {
+      const res = await window.storage.get('conversations', false);
+      if (res && res.value) conversations = JSON.parse(res.value);
+    } catch (e) { conversations = {}; }
+    try {
+      const active = await window.storage.get('activeId', false);
+      if (active && active.value && conversations[active.value]) activeId = active.value;
+    } catch (e) {}
+    if (!activeId || !conversations[activeId]) createNewConversation(false);
+    renderConvList();
+    renderActiveConversation();
+  }
+
+  async function saveConversations() {
+    try { await window.storage.set('conversations', JSON.stringify(conversations), false); } catch (e) {}
+    try { await window.storage.set('activeId', activeId, false); } catch (e) {}
+  }
+
+  function createNewConversation(save = true) {
+    const id = 'c_' + Date.now();
+    conversations[id] = { title: 'New chat', messages: [] };
+    activeId = id;
+    if (save) { saveConversations(); renderConvList(); renderActiveConversation(); }
+    return id;
+  }
+
+  function renderConvList() {
+    convList.innerHTML = '';
+    const ids = Object.keys(conversations).sort((a,b) => b.localeCompare(a));
+    ids.forEach(id => {
+      const conv = conversations[id];
+      const item = document.createElement('div');
+      item.className = 'conv-item' + (id === activeId ? ' active' : '');
+      item.innerHTML = `<span>${escapeHtml(conv.title)}</span><span class="del-x" data-id="${id}">✕</span>`;
+      item.addEventListener('click', (e) => {
+        if (e.target.classList.contains('del-x')) return;
+        activeId = id;
+        saveConversations();
+        renderConvList();
+        renderActiveConversation();
+        if (window.innerWidth <= 720) { sidebar.classList.remove('open'); sidebarBackdrop.classList.remove('open'); }
+      });
+      item.querySelector('.del-x').addEventListener('click', (e) => {
+        e.stopPropagation();
+        delete conversations[id];
+        if (activeId === id) {
+          const remaining = Object.keys(conversations);
+          activeId = remaining.length ? remaining[0] : createNewConversation(false);
+        }
+        saveConversations();
+        renderConvList();
+        renderActiveConversation();
+      });
+      convList.appendChild(item);
+    });
+  }
+
+  function renderActiveConversation() {
+    const conv = conversations[activeId];
+    convTitle.textContent = conv.title;
+    chatInner.innerHTML = '';
+    if (conv.messages.length === 0) {
+      chatInner.appendChild(emptyState);
+      return;
+    }
+    conv.messages.forEach(m => {
+      if (m.role === 'user') addUserRow(m.content);
+      else addBotRow(m.content);
+    });
+    scrollDown();
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function scrollDown() { chatBox.scrollTop = chatBox.scrollHeight; }
+
+  function addUserRow(text) {
+    if (emptyState.parentNode) emptyState.remove();
+    const row = document.createElement('div');
+    row.className = 'row user';
+    row.innerHTML = `<div class="avatar user">You</div><div class="msg-col"><div class="bubble"></div></div>`;
+    row.querySelector('.bubble').textContent = text;
+    chatInner.appendChild(row);
+    scrollDown();
+  }
+
+  function addBotRow(fullMarkdownText) {
+    const row = document.createElement('div');
+    row.className = 'row bot';
+    row.innerHTML = `
+      <div class="avatar bot">${botAvatarSVG}</div>
+      <div class="msg-col">
+        <div class="bubble"></div>
+        <div class="msg-actions">
+          <button class="copyBtn">📋 Copy</button>
+          <button class="regenBtn">🔁 Regenerate</button>
+        </div>
+      </div>`;
+    chatInner.appendChild(row);
+    const bubble = row.querySelector('.bubble');
+    renderMarkdownInto(bubble, fullMarkdownText);
+    row.querySelector('.copyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(fullMarkdownText);
+      const btn = row.querySelector('.copyBtn');
+      btn.textContent = '✅ Copied';
+      setTimeout(() => btn.textContent = '📋 Copy', 1200);
+    });
+    row.querySelector('.regenBtn').addEventListener('click', () => regenerate(row));
+    scrollDown();
+    return row;
+  }
+
+  function renderMarkdownInto(bubble, text) {
+    if (typeof marked === 'undefined' || typeof DOMPurify === 'undefined') {
+      bubble.textContent = text || '';
+      return;
+    }
+    const raw = marked.parse(text || '');
+    bubble.innerHTML = DOMPurify.sanitize(raw);
+    bubble.querySelectorAll('pre code').forEach(block => {
+      if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+      const pre = block.parentElement;
+      pre.classList.add('code-wrap');
+      const btn = document.createElement('button');
+      btn.className = 'copy-code-btn';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(block.textContent);
+        btn.textContent = 'Copied';
+        setTimeout(() => btn.textContent = 'Copy', 1200);
+      });
+      pre.appendChild(btn);
+    });
+  }
+
+  function addTypingRow() {
+    const row = document.createElement('div');
+    row.className = 'row bot';
+    row.id = 'typingRow';
+    row.innerHTML = `<div class="avatar bot">${botAvatarSVG}</div><div class="msg-col"><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+    chatInner.appendChild(row);
+    scrollDown();
+    return row;
+  }
+
+  async function streamAI(messagesForApi, onDelta, onDone, onError) {
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: "You are Indus AI, a helpful, knowledgeable, friendly assistant. Answer in English. Use markdown formatting (code blocks, lists, bold) where it helps clarity.",
+          messages: messagesForApi
+        })
+      });
+
+      // If the backend returned a JSON error instead of a stream, show the real reason.
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const errData = await response.json().catch(() => ({}));
+        onDone(`⚠️ Backend error (status ${response.status}): ${errData.error || 'Unknown error'}${errData.detail ? '\n\nDetail: ' + errData.detail : ''}`);
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const jsonStr = line.slice(5).trim();
+          if (!jsonStr) continue;
+          try {
+            const evt = JSON.parse(jsonStr);
+            if (evt.type === 'content_block_delta' && evt.delta && evt.delta.text) {
+              fullText += evt.delta.text;
+              onDelta(fullText);
+            }
+          } catch (e) {}
+        }
+      }
+      onDone(fullText || '⚠️ Backend responded but sent no readable text. Check Vercel logs for the raw Gemini response.');
+    } catch (err) {
+      onError(err);
+    }
+  }
+
+  function buildApiMessages() {
+    return conversations[activeId].messages.map(m => ({ role: m.role, content: m.content }));
+  }
+
+  async function sendMessage(text) {
+    const conv = conversations[activeId];
+    conv.messages.push({ role: 'user', content: text });
+    if (conv.messages.length === 1) {
+      conv.title = text.slice(0, 34) + (text.length > 34 ? '…' : '');
+      convTitle.textContent = conv.title;
+    }
+    addUserRow(text);
+    saveConversations();
+    renderConvList();
+
+    const typingRow = addTypingRow();
+    sendBtn.disabled = true;
+
+    await streamAI(buildApiMessages(), (partial) => {
+      typingRow.querySelector('.bubble').textContent = partial;
+      scrollDown();
+    }, (finalText) => {
+      typingRow.remove();
+      const text2 = finalText || 'Sorry, I couldn\'t generate a response.';
+      conv.messages.push({ role: 'assistant', content: text2 });
+      addBotRow(text2);
+      saveConversations();
+      sendBtn.disabled = false;
+    }, (err) => {
+      console.error('Indus AI error:', err);
+      typingRow.remove();
+      addBotRow('⚠️ Something went wrong reaching the AI. Please try again.');
+      sendBtn.disabled = false;
+    });
+  }
+
+  function regenerate(row) {
+    const conv = conversations[activeId];
+    if (conv.messages.length === 0 || conv.messages[conv.messages.length - 1].role !== 'assistant') return;
+    conv.messages.pop();
+    row.remove();
+    const typingRow = addTypingRow();
+    sendBtn.disabled = true;
+    streamAI(buildApiMessages(), (partial) => {
+      typingRow.querySelector('.bubble').textContent = partial;
+      scrollDown();
+    }, (finalText) => {
+      typingRow.remove();
+      const text2 = finalText || 'Sorry, I couldn\'t generate a response.';
+      conv.messages.push({ role: 'assistant', content: text2 });
+      addBotRow(text2);
+      saveConversations();
+      sendBtn.disabled = false;
+    }, (err) => {
+      typingRow.remove();
+      addBotRow('⚠️ Something went wrong. Please try again.');
+      sendBtn.disabled = false;
+    });
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    input.style.height = 'auto';
+    sendMessage(text);
+  });
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  document.querySelectorAll('.suggestion-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      input.value = chip.textContent;
+      form.requestSubmit();
+    });
+  });
+
+  document.getElementById('newChatBtn').addEventListener('click', () => createNewConversation());
+
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    sidebarBackdrop.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    sidebarBackdrop.classList.remove('open');
+  }
+  document.getElementById('sidebarToggle').addEventListener('click', () => {
+    if (window.innerWidth <= 720) {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    } else {
+      sidebar.classList.toggle('hidden');
+    }
+  });
+  sidebarCloseBtn.addEventListener('click', closeSidebar);
+  sidebarBackdrop.addEventListener('click', closeSidebar);
+
+  themeToggle.addEventListener('click', async () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    themeToggle.textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+    try { await window.storage.set('theme', next, false); } catch (e) {}
+  });
+
+  async function loadTheme() {
+    try {
+      const res = await window.storage.get('theme', false);
+      if (res && res.value === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeToggle.textContent = '☀️ Light';
+      }
+    } catch (e) {}
+  }
+
+  // ---------- Auth (local-only, device-based) ----------
+  const authOverlay = document.getElementById('authOverlay');
+  const authForm = document.getElementById('authForm');
+  const authName = document.getElementById('authName');
+  const authEmail = document.getElementById('authEmail');
+  const authTitle = document.getElementById('authTitle');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authSwitchLink = document.getElementById('authSwitchLink');
+  const unameLabel = document.getElementById('unameLabel');
+  const avatarMini = document.getElementById('avatarMini');
+  const signOutBtn = document.getElementById('signOutBtn');
+
+  let authMode = 'signin'; // or 'signup'
+
+  authSwitchLink.addEventListener('click', () => {
+    authMode = authMode === 'signin' ? 'signup' : 'signin';
+    authTitle.textContent = authMode === 'signin' ? 'Sign in to Indus AI' : 'Create your Indus AI account';
+    authSubmitBtn.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
+    authSwitchLink.textContent = authMode === 'signin' ? 'Create an account' : 'Already have an account? Sign in';
+  });
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = authName.value.trim();
+    const email = authEmail.value.trim();
+    if (!name) return;
+    const profile = { name, email };
+    try { await window.storage.set('profile', JSON.stringify(profile), false); } catch (err) {}
+    applyProfile(profile);
+    authOverlay.classList.add('hidden');
+  });
+
+  signOutBtn.addEventListener('click', async () => {
+    try { await window.storage.delete('profile', false); } catch (err) {}
+    authName.value = '';
+    authEmail.value = '';
+    authMode = 'signin';
+    authTitle.textContent = 'Sign in to Indus AI';
+    authSubmitBtn.textContent = 'Sign in';
+    authSwitchLink.textContent = 'Create an account';
+    authOverlay.classList.remove('hidden');
+    unameLabel.textContent = 'Guest';
+    avatarMini.textContent = '?';
+  });
+
+  function applyProfile(profile) {
+    unameLabel.textContent = profile.name;
+    avatarMini.textContent = profile.name.trim().charAt(0).toUpperCase();
+  }
+
+  async function loadProfile() {
+    try {
+      const res = await window.storage.get('profile', false);
+      if (res && res.value) {
+        const profile = JSON.parse(res.value);
+        applyProfile(profile);
+        authOverlay.classList.add('hidden');
+        return;
+      }
+    } catch (err) {}
+    authOverlay.classList.remove('hidden');
+  }
+
+  // ---------- Contact / Feedback ----------
+  const contactBtn = document.getElementById('contactBtn');
+  const contactOverlay = document.getElementById('contactOverlay');
+  const contactCloseBtn = document.getElementById('contactCloseBtn');
+  const feedbackForm = document.getElementById('feedbackForm');
+  const feedbackSubmitBtn = document.getElementById('feedbackSubmitBtn');
+  const feedbackStatus = document.getElementById('feedbackStatus');
+
+  contactBtn.addEventListener('click', () => {
+    contactOverlay.classList.remove('hidden');
+  });
+  contactCloseBtn.addEventListener('click', () => {
+    contactOverlay.classList.add('hidden');
+  });
+  contactOverlay.addEventListener('click', (e) => {
+    if (e.target === contactOverlay) contactOverlay.classList.add('hidden');
+  });
+
+  feedbackForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('feedbackName').value.trim();
+    const message = document.getElementById('feedbackMessage').value.trim();
+    if (!message) return;
+
+    feedbackSubmitBtn.disabled = true;
+    feedbackSubmitBtn.textContent = 'Sending...';
+    feedbackStatus.textContent = '';
+    feedbackStatus.className = '';
+
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, message })
+      });
+      if (res.ok) {
+        feedbackStatus.textContent = 'Thanks! Your message has been sent.';
+        feedbackStatus.className = 'success';
+        feedbackForm.reset();
+      } else {
+        feedbackStatus.textContent = 'Could not send right now. Try email/WhatsApp above.';
+        feedbackStatus.className = 'error';
+      }
+    } catch (err) {
+      feedbackStatus.textContent = 'Could not send right now. Try email/WhatsApp above.';
+      feedbackStatus.className = 'error';
+    }
+
+    feedbackSubmitBtn.disabled = false;
+    feedbackSubmitBtn.textContent = 'Send Feedback';
+  });
+
+  loadProfile();
+  loadTheme();
+  loadConversations();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
