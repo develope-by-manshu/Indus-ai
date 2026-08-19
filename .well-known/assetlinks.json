@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "app.vercel.indus_ai_beta.twa",
-        "sha256_cert_fingerprints": ["8A:24:C8:70:5E:1F:E3:36:B1:77:B2:97:32:5D:C6:E3:74:20:CE:03:6B:5E:8E:57:91:B3:C0:C8:75:CA:FC:0C"]
-      }
-    }]
